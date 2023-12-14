@@ -2,12 +2,6 @@ import random
 import re
 from collections import defaultdict
 
-from django.db.models import Q, Count
-from django.shortcuts import render
-
-# Create your views here.
-
-from django.http import HttpResponse
 from rest_framework import generics
 
 from .constants import products
@@ -42,18 +36,16 @@ class ProductsView(generics.ListAPIView):
         search_query = self.request.query_params.get('search', None)
         sort_key = self.request.query_params.get('sort', None)
         companies = self.request.query_params.get('company')
-        print(len(companies))
-        if len(companies) == 0:
+
+        if not companies or len(companies) == 0:
             companies = list(Company.objects.all().values_list('name', flat=True))
         else:
             companies = companies.split(',')
-
         base_queryset = Product.objects.select_related('company').all()
 
         if search_query:
             search_words = search_query.split()
 
-            # Use defaultdict to group products by title
             grouped_products = defaultdict(list)
             for product in base_queryset:
                 for word in search_words:
@@ -71,7 +63,6 @@ class ProductsView(generics.ListAPIView):
                             "company_image": str(product.company.image)
                         })
 
-            # Convert the grouped products to a list for output
             results = [{"title": title, "products": products} for title, products in grouped_products.items()]
             if sort_key:
                 for each_row in results:
